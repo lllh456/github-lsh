@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include<stdio.h>
 int main()
 {char a[100];
@@ -7,3 +8,10 @@ printf("ÄãÊäÈëµÄÊÇ%s\n",a);
 return 0;
 }
 
+=======
+#include<stdio.h>
+int main()
+{printf("Hello World");
+return 0;
+}
+>>>>>>> 55e5b20646df816401a7af87bb44dc19a28b0487
