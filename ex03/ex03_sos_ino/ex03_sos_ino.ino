@@ -1,151 +1,44 @@
-const int ledPin = 2;
+// 定义触摸引脚 (T0对应GPIO4)
+#define TOUCH_PIN 4
+// 定义LED引脚 (ESP32 DevKit板载LED通常是GPIO2)
+#define LED_PIN 2
+// 中断模式设置：0为轮询模式，1为中断模式
+#define EXT_ISR_MODE 0
 
-const int dotTime = 200;    // 短亮
-const int dashTime = 600;   // 长亮
-const int betweenTime = 200;// 闪与闪之间的间隔
-const int charSpace = 500;   // 字母间隔
-const int wordSpace = 2000; // 一组结束间隔
-
-unsigned long previousTime = 0;
-int step = 0; // 一步一步走流程
+// 阈值，需要通过串口监视器观察并调整
+int threshold = 20; 
+// 触摸值
+int touchValue;
+bool ledState = false;       // LED当前状态
+bool lastTouched = false;    // 上一次是否触摸
+unsigned long lastDebounce = 0;
+unsigned long debounceTime = 150;  // 防抖时间
 
 void setup() {
   Serial.begin(115200);
-  pinMode(ledPin, OUTPUT);
+  delay(1000); // 等待串口稳定
+
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, ledState);
 }
 
 void loop() {
+  touchValue = touchRead(TOUCH_PIN);
+  Serial.print("Touch Value: ");
+  Serial.println(touchValue);
+
+  bool isTouched = (touchValue < threshold);
   unsigned long now = millis();
 
-  // 三次短闪 
-  if (step == 0) {
-    digitalWrite(ledPin, HIGH);
-    if (now - previousTime >= dotTime) {
-      digitalWrite(ledPin, LOW);
-      previousTime = now;
-      step = 1;
+  // 防抖 + 边缘检测（只在刚触摸的瞬间触发）
+  if (now - lastDebounce > debounceTime) {
+    // 从 未触摸 → 触摸 的跳变沿
+    if (isTouched && !lastTouched) {
+      ledState = !ledState;    // 翻转状态
+      digitalWrite(LED_PIN, ledState);
+      lastDebounce = now;
     }
+    lastTouched = isTouched;
   }
-  else if (step == 1) {
-    if (now - previousTime >= betweenTime) {
-      previousTime = now;
-      step = 2;
-    }
-  }
-  else if (step == 2) {
-    digitalWrite(ledPin, HIGH);
-    if (now - previousTime >= dotTime) {
-      digitalWrite(ledPin, LOW);
-      previousTime = now;
-      step = 3;
-    }
-  }
-  else if (step == 3) {
-    if (now - previousTime >= betweenTime) {
-      previousTime = now;
-      step = 4;
-    }
-  }
-  else if (step == 4) {
-    digitalWrite(ledPin, HIGH);
-    if (now - previousTime >= dotTime) {
-      digitalWrite(ledPin, LOW);
-      previousTime = now;
-      step = 5;
-    }
-  }
-  else if (step == 5) {
-    if (now - previousTime >= charSpace) {
-      previousTime = now;
-      step = 6;
-    }
-  }
-
-  //  三次长闪 
-  else if (step == 6) {
-    digitalWrite(ledPin, HIGH);
-    if (now - previousTime >= dashTime) {
-      digitalWrite(ledPin, LOW);
-      previousTime = now;
-      step = 7;
-    }
-  }
-  else if (step == 7) {
-    if (now - previousTime >= betweenTime) {
-      previousTime = now;
-      step = 8;
-    }
-  }
-  else if (step == 8) {
-    digitalWrite(ledPin, HIGH);
-    if (now - previousTime >= dashTime) {
-      digitalWrite(ledPin, LOW);
-      previousTime = now;
-      step = 9;
-    }
-  }
-  else if (step == 9) {
-    if (now - previousTime >= betweenTime) {
-      previousTime = now;
-      step = 10;
-    }
-  }
-  else if (step == 10) {
-    digitalWrite(ledPin, HIGH);
-    if (now - previousTime >= dashTime) {
-      digitalWrite(ledPin, LOW);
-      previousTime = now;
-      step = 11;
-    }
-  }
-  else if (step == 11) {
-    if (now - previousTime >= charSpace) {
-      previousTime = now;
-      step = 12;
-    }
-  }
-
-  // 三次短闪 
-  else if (step == 12) {
-    digitalWrite(ledPin, HIGH);
-    if (now - previousTime >= dotTime) {
-      digitalWrite(ledPin, LOW);
-      previousTime = now;
-      step = 13;
-    }
-  }
-  else if (step == 13) {
-    if (now - previousTime >= betweenTime) {
-      previousTime = now;
-      step = 14;
-    }
-  }
-  else if (step == 14) {
-    digitalWrite(ledPin, HIGH);
-    if (now - previousTime >= dotTime) {
-      digitalWrite(ledPin, LOW);
-      previousTime = now;
-      step = 15;
-    }
-  }
-  else if (step == 15) {
-    if (now - previousTime >= betweenTime) {
-      previousTime = now;
-      step = 16;
-    }
-  }
-  else if (step == 16) {
-    digitalWrite(ledPin, HIGH);
-    if (now - previousTime >= dotTime) {
-      digitalWrite(ledPin, LOW);
-      previousTime = now;
-      step = 17;
-    }
-  }
-  else if (step == 17) {
-    if (now - previousTime >= wordSpace) {
-      previousTime = now;
-      step = 0; // 重头再来
-    }
-  }
+  delay(100);
 }
